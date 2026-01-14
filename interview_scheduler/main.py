@@ -2,8 +2,8 @@ from typing import List, Optional  # Importujeme potřebné typy
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from availability import Availability, TimeSlot
-
-
+from person import Candidate, Interviewer
+from scheduler import InterviewScheduler
 
 def main() -> None:
 
