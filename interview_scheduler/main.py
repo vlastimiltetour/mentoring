@@ -21,14 +21,23 @@ def main() -> None:
         
     ])
 
-    interviewer1_availability = Availability([ # vlastimil
+    vlastimil_availability = Availability([ # vlastimil
         TimeSlot(
-            datetime(2026, 6, 1, 9, 30),
-            datetime(2026, 6, 1, 11, 30),),
-        TimeSlot(
-            datetime(2026, 9, 1, 11, 00),
-            datetime(2026, 9, 1, 12, 00),
-        )
+            datetime(2026, 6, 1, 9, 00),
+            datetime(2026, 6, 1, 17, 00),),
+            TimeSlot(
+            datetime(2026, 6, 2, 9, 00),
+            datetime(2026, 6, 2, 17, 00),),
+            TimeSlot(
+            datetime(2026, 6, 3, 9, 00),
+            datetime(2026, 6, 3, 17, 00),),
+            TimeSlot(
+            datetime(2026, 6, 4, 9, 00),
+            datetime(2026, 6, 4, 17, 00),),
+            TimeSlot(
+            datetime(2026, 6, 5, 9, 00),
+            datetime(2026, 6, 5, 17, 00),)
+        
     ])
 
     interviewer2_availability = Availability([ #jaroslav
@@ -45,12 +54,14 @@ def main() -> None:
         )
     ])
 
-    karel_candidate = Candidate("Karel Novak", karel_availability)
-    interviewer1 = Interviewer("Vlastimil Tetour", interviewer1_availability)
-    interviewer2 = Interviewer("Jaroslav Kamen", interviewer2_availability)
+    karel_candidate = Candidate(1,"Karel Novak", karel_availability)
+    interviewer1 = Interviewer(11,"Vlastimil Tetour", vlastimil_availability)
+    interviewer2 = Interviewer(12,"Jaroslav Kamen", interviewer2_availability)
     scheduler = InterviewScheduler(duration=60)
     interview_scheduled = scheduler.schedule(karel_candidate, [interviewer1,interviewer2]) # karel vlastimil: 10.30,  11.00 ; karel jaroslav 11.00
-    print(interview_scheduled)
+    #print(interview_scheduled)
+
+    print(interviewer1.check_availability())
 
 if __name__ == "__main__":
     main()

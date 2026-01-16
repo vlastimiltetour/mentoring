@@ -10,6 +10,9 @@ class TimeSlot:
 
 class Availability:
     def __init__(self, slots: list[TimeSlot]):
+        #interviewer_id
+        #candidate_id
+        #slot a day
         self.slots = slots
 
     def __repr__(self):
@@ -20,7 +23,7 @@ class Availability:
 class Interview:
     candidate_name: str
     interviewer_name: str
-    scheduled_slot: datetime
+    scheduled_slot: TimeSlot
 
     def __str__(self):
         return f"The interview betweeen candidate {self.candidate_name} and interviewer {self.interviewer_name} will take place on {self.scheduled_slot}."

@@ -2,7 +2,7 @@ from typing import List, Optional  # Importujeme potřebné typy
 from availability import Availability
 
 class Person:
-    def __init__(self, name: str, availability: Availability, person_id: int | None = None):
+    def __init__(self, person_id: int, name: str, availability: Availability):
         self.id = person_id
         self.name = name
         self.availability = availability
@@ -14,6 +14,10 @@ class Candidate(Person):
     
 
 class Interviewer(Person):
-    def __repr__(self):
+    def check_availability(self):
         return f"Interviewer {self.name} is available: {self.availability}" 
+        
+        
+    
+
 
