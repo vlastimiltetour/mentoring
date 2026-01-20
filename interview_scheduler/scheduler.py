@@ -5,31 +5,31 @@ from person import Candidate, Interviewer
 from availability import Interview, Availability
 
 class InterviewScheduler:
-    def __init__(self, duration: int):
-        self.duration = duration
+
+    def __init__(self, availability: Availability):
+        self.availability = availability
     
-    def schedule(self, candidate: Candidate, interviewers: list[Interviewer]):
+    def schedule(self, candidate: Candidate, interviewers: list[Interviewer], intervew_duration: int):
         #take candidate and schedule with interviewers 
         #iterate over interviewers
-
+        self.intervew_duration = intervew_duration
         all_matching_slots = []
     
         for interviewer in interviewers:  
-            interviewer_slots = self._get_timeslots(availability=interviewer.availability)
-            candidate_slots = self._get_timeslots(availability=candidate.availability)
+            interviewer_slots = self._get_timeslots(person=interviewer)
+            candidate_slots = self._get_timeslots(person=candidate)
+            
             matching_slots = [i for i in interviewer_slots if i in candidate_slots]
             
             for slot in matching_slots:
                 all_matching_slots.append((slot, interviewer.name))
         
-        
-        
         if all_matching_slots:
             earliest_slot = self._find_earliest_slot(all_matching_slots)
             
             interviewer_scheduled = Interview(
-                candidate_name=candidate.name, 
-                interviewer_name=earliest_slot[1],
+                candidate=candidate, 
+                interviewer=earliest_slot[1],
                 scheduled_slot=earliest_slot[0]
             )
             return interviewer_scheduled
@@ -37,12 +37,14 @@ class InterviewScheduler:
        
         return None
     
-    def _get_timeslots(self, availability: Availability):
+    def _get_timeslots(self, person):
         available_slots = []
-        duration = timedelta(minutes=self.duration)
+        duration = timedelta(minutes=self.intervew_duration)
         start_time = None
 
-        for slot in availability.slots:
+        availability = self.availability.get_slots_per_person(person)
+        
+        for slot in availability:
            start_time = slot.start 
            
            while (start_time + duration) <= slot.end:

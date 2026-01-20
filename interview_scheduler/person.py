@@ -1,21 +1,23 @@
 from typing import List, Optional  # Importujeme potřebné typy
-from availability import Availability
+from dataclasses import dataclass
 
+@dataclass
 class Person:
-    def __init__(self, person_id: int, name: str, availability: Availability):
-        self.id = person_id
-        self.name = name
-        self.availability = availability
+   id: int
+   name: str = None
+   email: str = None
 
-
+@dataclass
 class Candidate(Person):
+
     def __repr__(self):
-        return f"Candidate {self.name} has applied to the process, with this availability: {self.availability}"
-    
+        return f"candidate {self.name}"
 
 class Interviewer(Person):
-    def check_availability(self):
-        return f"Interviewer {self.name} is available: {self.availability}" 
+    
+    def __repr__(self):
+        return f"interviewer {self.name}"
+
         
         
     
