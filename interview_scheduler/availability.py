@@ -12,27 +12,27 @@ class TimeSlot:
     status: str
 
 
+
+
 class Availability:
     def __init__(self, all_slots: list[TimeSlot]):
         self.all_slots = all_slots
-
-    def process_slots(self, person: "Candidate | Interviewer"):
-        clean_slots = []
         
-        for slot in self.all_slots:
-            print('slot', slot)
-         
+    def get_slots_per_person(self, person: "Candidate | Interviewer", slot_duration: int):
+        available_slots = []
+        duration = timedelta(minutes=slot_duration)
+        start_time = None
+
+        raw_availability = self.all_slots
         
-    def get_slots_per_person(self, person: "Candidate | Interviewer"):
-        slots_query = self.process_slots(person)
+        for slot in raw_availability:
+           if slot.owner_id == person.id and slot.status == "available":
+                start_time = slot.start 
+                while (start_time + duration) <= slot.end:
+                    available_slots.append(start_time)          
+                    start_time += duration
 
-
-        for slot in self.all_slots:
-            
-            if slot.owner_id == person.id and slot.status == "available":
-                slots_query.append(slot)
-                
-        return slots_query
+        return available_slots
 
     def get_all_available_slots(self):
         return self.all_slots 

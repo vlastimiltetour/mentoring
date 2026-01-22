@@ -16,8 +16,8 @@ class InterviewScheduler:
         all_matching_slots = []
     
         for interviewer in interviewers:  
-            interviewer_slots = self._get_timeslots(person=interviewer)
-            candidate_slots = self._get_timeslots(person=candidate)
+            interviewer_slots = self.availability.get_slots_per_person(person=interviewer, slot_duration=intervew_duration)
+            candidate_slots = self.availability.get_slots_per_person(person=candidate, slot_duration=intervew_duration)
             
             matching_slots = [i for i in interviewer_slots if i in candidate_slots]
             
@@ -36,22 +36,6 @@ class InterviewScheduler:
         
        
         return None
-    
-    def _get_timeslots(self, person):
-        available_slots = []
-        duration = timedelta(minutes=self.intervew_duration)
-        start_time = None
-
-        availability = self.availability.get_slots_per_person(person)
-        
-        for slot in availability:
-           start_time = slot.start 
-           
-           while (start_time + duration) <= slot.end:
-            available_slots.append(start_time)          
-            start_time += duration
-
-        return available_slots
     
     def _find_earliest_slot(self, slot_list): 
         earliest_slot = sorted(slot_list, key=lambda x: x[0])
