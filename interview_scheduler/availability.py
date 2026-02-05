@@ -5,6 +5,7 @@ from person import Interviewer, Candidate
 
 @dataclass
 class TimeSlot:
+    id: int
     start: datetime
     end: datetime
     owner_id: int
@@ -40,6 +41,7 @@ class Availability:
 
 @dataclass
 class Interview:
+    id: int
     candidate: Candidate
     interviewer: Interviewer
     scheduled_slot: TimeSlot

@@ -1,0 +1,20 @@
+{
+    "11": {
+        "id": 11,
+        "name": "Jaroslav Cerman",
+        "email": null,
+        "cls_type": "Candidate"
+    },
+    "1": {
+        "id": 1,
+        "name": "Vlastimil Tetour",
+        "email": null,
+        "cls_type": "Interviewer"
+    },
+    "2": {
+        "id": 2,
+        "name": "Karel Kinsky",
+        "email": "kaok@mail.cz",
+        "cls_type": "Interviewer"
+    }
+}

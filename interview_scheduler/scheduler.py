@@ -28,6 +28,7 @@ class InterviewScheduler:
             earliest_slot = self._find_earliest_slot(all_matching_slots)
             
             interviewer_scheduled = Interview(
+                id=1,
                 candidate=candidate, 
                 interviewer=earliest_slot[1],
                 scheduled_slot=earliest_slot[0]
