@@ -4,8 +4,8 @@ from dataclasses import asdict
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional
-from person import Person, Candidate, Interviewer
-from availability import Interview, TimeSlot
+from interview_scheduler.models.person import Person, Candidate, Interviewer
+from services.availability import Interview, TimeSlot
 #person, interviewer, candidate, TimeSlot
 
 
@@ -36,7 +36,6 @@ class PersonDao:
 
         object_dict = asdict(object)
         object_dict["cls_type"] = object.__class__.__name__
-
         data[str(object.id)] = object_dict
         
         self._update_data(data)
@@ -57,6 +56,7 @@ class PersonDao:
         return cls(**record)
     
     #read
+    #here to be careful about pagination
     def list_all(self) -> List[Person]:
         data = self._load_data()
         result = []
@@ -65,7 +65,7 @@ class PersonDao:
             cls_name = value.pop("cls_type", "Person")
             cls = self.TYPE_MAP.get(cls_name, Person)            
             result.append(cls(**value))
-        return result
+        return result[:5] # pagination
     
     #delete
     def delete(self, object_id) -> bool:
@@ -166,19 +166,22 @@ class TimeSlotDao:
         data = self._load_data()
 
         object_dict = asdict(object)
+        print(object_dict)
         
-        print("object_dict", object_dict)
+        print("object_dict", object_dict, object_dict["start"], object_dict["id"], type(object_dict["id"]), object_dict["status"])
 
         #convert datetime to isoformat
+        
         
         object_dict["start"] = object.start.isoformat()
         object_dict["end"] = object.end.isoformat()
 
         #getting ready to update 
-        data[str(object.id)] = object_dict
+        data = object_dict
+        data[str(data["id"])] = data["id"]
         
         self._update_data(data)
-        print(f'saved {object.id, object.} succesfully into database')
+        print(f'saved Timeslot {object.id, object.owner_id} succesfully into database')
 
     #read
     def get_object_by_id(self, object_id: int) -> Optional[Interview]:

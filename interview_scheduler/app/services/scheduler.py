@@ -1,11 +1,10 @@
 from typing import List, Optional  # Importujeme potřebné typy
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from person import Candidate, Interviewer
+from models.person import Candidate, Interviewer, Person
 from availability import Interview, Availability
 
 class InterviewScheduler:
-
     def __init__(self, availability: Availability):
         self.availability = availability
     
