@@ -37,7 +37,6 @@ class Availability:
 
     def is_available(self, person: "Candidate | Interviewer", slot: datetime, slot_duration: int):
         
-
         #is slot within workours?
         print(self.is_within_workhours(slot))
         #is slot not blocked?
