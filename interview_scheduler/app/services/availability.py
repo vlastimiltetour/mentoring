@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, time
 from typing import Optional, TYPE_CHECKING
 from app.models.person import Interviewer, Candidate
-from app.models.timeslot import WorkHours
+from app.models.timeslot import WorkHours, TimeSlot
 
 class Availability:
     def __init__(self, calendar_period: datetime, workhours: WorkHours):
@@ -13,18 +13,26 @@ class Availability:
 
         # get holidays
 
+
+    #timeslot - could be outside wokring hours (lower or higher), could meet the blocked slot, or the holiday
+    #I'd start first with whole days - weekday, booked, PTO
+    #then compare specific slots against the request
     def is_within_workhours(self, slot):
-        print(slot.time(), self.workhours.start)
+        print(slot.time(), self.workhours.workdays, slot.weekday())
         if slot.weekday() not in self.workhours.workdays:
-            print()
+            print('this is not weekday', slot.weekday())
             return False 
         
         if slot.time() < self.workhours.start:
+            print(slot.time(), "is too early", self.workhours.start)
             return False 
         
         if slot.time() > self.workhours.end:
+            print(slot.time(), "is too late", self.workhours.end)
+
             return False 
         
+        print('the person is available')
         return True
 
     def is_available(self, person: "Candidate | Interviewer", slot: datetime, slot_duration: int):

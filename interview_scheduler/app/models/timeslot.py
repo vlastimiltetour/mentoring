@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta, time
 from typing import Optional, TYPE_CHECKING
-from person import Interviewer, Candidate, Person
+from app.models.person import Interviewer, Candidate, Person
 
 @dataclass
 class TimeSlot:

@@ -1,11 +1,13 @@
 #This is the DAO layer
 import json
+import os
 from dataclasses import asdict
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional
-from interview_scheduler.models.person import Person, Candidate, Interviewer
-from services.availability import Interview, TimeSlot
+from app.models.person import Person, Candidate, Interviewer
+from app.models.timeslot import TimeSlot, WorkHours
+from app.services.availability import Interview
 #person, interviewer, candidate, TimeSlot
 
 
@@ -17,9 +19,15 @@ class PersonDao:
     }
 
     def __init__(self, storage_file: str = "person.json"):
-        self._storage_file = storage_file
+        self._directory = "interview_scheduler/data" #creation of the path
+        self._storage_file = os.path.join(self._directory, storage_file) #combining with the filename
+
+        # Ensure the directory exists so open() doesn't fail
+        os.makedirs(self._directory, exist_ok=True)
 
     def _load_data(self) -> Dict: #thi is not ideal, opening up every time 
+        if not os.path.exists(self._storage_file):
+            return {}
         try:
             with open(self._storage_file, 'r') as f:
                 return json.load(f)
@@ -50,10 +58,12 @@ class PersonDao:
         if not record:
             return None
         
-        cls_name = record.pop("cls_type", "Person")
+        # Use a copy to avoid mutating the local data dict before return
+        data_copy = record.copy()
+        cls_name = data_copy.pop("cls_type", "Person")
         cls = self.TYPE_MAP.get(cls_name, Person)
 
-        return cls(**record)
+        return cls(**data_copy)
     
     #read
     #here to be careful about pagination
@@ -62,10 +72,11 @@ class PersonDao:
         result = []
 
         for value in data.values():
-            cls_name = value.pop("cls_type", "Person")
+            data_copy = value.copy()
+            cls_name = data_copy.pop("cls_type", "Person")
             cls = self.TYPE_MAP.get(cls_name, Person)            
-            result.append(cls(**value))
-        return result[:5] # pagination
+            result.append(cls(**data_copy))
+        return result[:5] # pagination TODO 
     
     #delete
     def delete(self, object_id) -> bool:
@@ -81,9 +92,15 @@ class PersonDao:
  
 class InterviewDao:
     def __init__(self, storage_file: str = "interviews.json"):
-        self._storage_file = storage_file
+        self._directory = "interview_scheduler/data" #creation of the path
+        self._storage_file = os.path.join(self._directory, storage_file) #combining with the filename
+
+        # Ensure the directory exists so open() doesn't fail
+        os.makedirs(self._directory, exist_ok=True)
 
     def _load_data(self) -> Dict: #thi is not ideal, opening up every time 
+        if not os.path.exists(self._storage_file):
+            return {}
         try:
             with open(self._storage_file, 'r') as f:
                 return json.load(f)
@@ -108,7 +125,7 @@ class InterviewDao:
         print(f'saved {object.name} succesfully into database')
 
     #read
-    def get_object_by_id(self, object_id: int) -> Optional[Interview]:
+    def get_object_by_id(self, object_id: int) -> Optional[Interview]:  #finish the data copy TODO
         data = self._load_data()
     
         record = data.get(str(object_id))
@@ -122,7 +139,7 @@ class InterviewDao:
         return cls(**record)
     
     #read
-    def list_all(self) -> List[Person]:
+    def list_all(self) -> List[Person]:  #finish the data copy TODO
         data = self._load_data()
         result = []
 
@@ -147,9 +164,15 @@ class InterviewDao:
 
 class TimeSlotDao:
     def __init__(self, storage_file: str = "slots.json"):
-        self._storage_file = storage_file
+        self._directory = "interview_scheduler/data" #creation of the path
+        self._storage_file = os.path.join(self._directory, storage_file) #combining with the filename
 
-    def _load_data(self) -> Dict: #thi is not ideal, opening up every time 
+        # Ensure the directory exists so open() doesn't fail
+        os.makedirs(self._directory, exist_ok=True)
+
+    def _load_data(self) -> Dict: #this is not ideal, opening up every time 
+        if not os.path.exists(self._storage_file):
+            return {}
         try:
             with open(self._storage_file, 'r') as f:
                 raw_data = json.load(f)
@@ -184,7 +207,7 @@ class TimeSlotDao:
         print(f'saved Timeslot {object.id, object.owner_id} succesfully into database')
 
     #read
-    def get_object_by_id(self, object_id: int) -> Optional[Interview]:
+    def get_object_by_id(self, object_id: int) -> Optional[Interview]: #finish the data copy TODO 
         data = self._load_data()
     
         record = data.get(str(object_id))
@@ -198,7 +221,7 @@ class TimeSlotDao:
         return cls(**record)
     
     #read
-    def list_all(self) -> List[Person]:
+    def list_all(self) -> List[Person]:  #finish the data copy TODO
         data = self._load_data()
         result = []
 
