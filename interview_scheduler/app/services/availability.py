@@ -12,8 +12,6 @@ class Availability:
         self.calendar_period = calendar_period
 
         # get holidays
-
-
     #timeslot - could be outside wokring hours (lower or higher), could meet the blocked slot, or the holiday
     #I'd start first with whole days - weekday, booked, PTO
     #then compare specific slots against the request
@@ -37,15 +35,14 @@ class Availability:
 
     def is_available(self, person: "Candidate | Interviewer", slot: datetime, slot_duration: int):
         
-        #is slot within workours?
+        #1 is slot within workours?
         print(self.is_within_workhours(slot))
-        #is slot not blocked?
+
+        #is slot not blocked? call the db 
 
         
-        
-        
         #return True or False 
-        pass 
+        return False 
 
     def get_all_available_slots(self):
         pass 
@@ -69,15 +66,3 @@ class Availability:
 
     def get_all_available_slots(self):
         return self.all_slots 
-
-
-@dataclass
-class Interview:
-    id: int
-    candidate: Candidate
-    interviewer: Interviewer
-    scheduled_slot: TimeSlot
-
-    def __str__(self):
-        return f"The interview betweeen {self.candidate} and interviewer {self.interviewer} will take place on {self.scheduled_slot}."
-

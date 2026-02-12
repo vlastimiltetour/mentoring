@@ -6,12 +6,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional
 from app.models.person import Person, Candidate, Interviewer
-from app.models.timeslot import TimeSlot, WorkHours
-from app.services.availability import Interview
+from app.models.timeslot import TimeSlot, WorkHours, Interview
 #person, interviewer, candidate, TimeSlot
 
 
-class PersonDao:
+class PersonDao: #TODO move to personDao
     TYPE_MAP = {
         "Person": Person,
         "Candidate": Candidate,
