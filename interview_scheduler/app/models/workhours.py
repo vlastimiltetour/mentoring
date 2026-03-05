@@ -4,10 +4,8 @@ from typing import Optional, TYPE_CHECKING
 from app.models.person import Interviewer, Candidate, Person
 
 @dataclass
-class TimeSlot:
+class WorkHours:
     id: int
-    start: datetime
-    end: datetime
-    owner_id: int
-    owner_type: str
-    status: str
+    start: time
+    end: time
+    workdays: set[int]

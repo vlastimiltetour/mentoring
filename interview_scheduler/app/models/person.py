@@ -1,4 +1,4 @@
-from typing import List, Optional  # Importujeme potřebné typy
+from typing import List, Optional  
 from dataclasses import dataclass
 
 @dataclass
@@ -15,6 +15,7 @@ class Candidate(Person):
         return f"candidate {self.name}"
 
 
+@dataclass
 class Interviewer(Person):
     def __repr__(self):
         return f"interviewer {self.name}"
