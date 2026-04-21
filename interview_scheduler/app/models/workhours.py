@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta, time
 from typing import Optional, TYPE_CHECKING
-from app.models.person import Interviewer, Candidate, Person
 
-@dataclass
+@dataclass(frozen=True) # Creating the immutable object
 class WorkHours:
     id: int
-    start: time
-    end: time
+    start_time: time
+    end_time: time
     workdays: set[int]

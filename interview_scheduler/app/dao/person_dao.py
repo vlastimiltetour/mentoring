@@ -5,11 +5,16 @@ from dataclasses import asdict
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional
-from app.models.person import Person, Candidate, Interviewer
-from app.models.timeslot import TimeSlot, WorkHours, Interview
-#person, interviewer, candidate, TimeSlot
+from app.models.timeslot import TimeSlot
+from app.models.person import Person
+from app.models.interviewer import Interviewer
+from app.models.candidate import Candidate
+from sqlalchemy import text
+import logging
+from sqlalchemy.exc import IntegrityError
 
 
+logger = logging.getLogger(__name__)
 # Design of the DAO layer
 '''
 You should pass the whole object when the DAO is writing data.
@@ -18,82 +23,96 @@ For save() or update(): Pass the whole object. The DAO needs the data to store i
 For get, delete, or find: Pass the ID only. It’s cleaner, less memory-intensive, and prevents "Object vs. Function" errors.
 '''
 
-class PersonDao: #TODO move to personDao
-    TYPE_MAP = {
-        "Person": Person,
-        "Candidate": Candidate,
-        "Interviewer": Interviewer,
-    }
+class PersonDao:
+    def __init__(self, engine):
+        self.engine = engine
+        self.table =  "person"
+    
+    # create
+    def save(self, entity: Person): 
+        
+        if self.get_by_email(entity.email):
+            logger.error(f"Object {entity.email} been already in the DB.")
+            return False
 
-    def __init__(self, storage_file: str = "person.json"):
-        self._directory = "interview_scheduler/data" #creation of the path
-        self._storage_file = os.path.join(self._directory, storage_file) #combining with the filename
+        query = text(f"INSERT INTO {self.table} (ID, NAME, EMAIL, PERSON_TYPE) VALUES (:id, :name, :email, :person_type);")
 
-        # Ensure the directory exists so open() doesn't fail
-        os.makedirs(self._directory, exist_ok=True)
+        # engine.begin command commits the record in db, engine.connect will not
+        # engine.begin() → auto-commit on success
 
-    def _load_data(self) -> Dict: #thi is not ideal, opening up every time 
-        if not os.path.exists(self._storage_file):
-            return {}
+        # TODO check if email is there already;
         try:
-            with open(self._storage_file, 'r') as f:
-                return json.load(f)
-        except (FileNotFoundError,json.JSONDecodeError):
-            return {}
+            with self.engine.begin() as conn: 
+                
+                conn.execute(query, {"id": entity.id,
+                                            "name": entity.name, 
+                                            "email": entity.email,
+                                            "person_type": entity.person_type})
+
+            logger.info(f"Object {entity.name} has been saved into the DB.")
+
+        except IntegrityError as e:
+            logger.error(f"Object {entity.name} been already in the DB {e}.")
         
-    def _update_data(self, data: Dict):
-        with open(self._storage_file, 'w') as f:
-            json.dump(data, f, indent=4)
-
-    #create & update
-    def save(self, object: Person): #store the pesron type
-        data = self._load_data()
-
-        object_dict = asdict(object)
-        object_dict["cls_type"] = object.__class__.__name__
-        data[str(object.id)] = object_dict
+    # read
+    def get_object_by_id(self, entity_id: str):
+        query = text(f"SELECT * FROM {self.table} WHERE ID =:id")
         
-        self._update_data(data)
-        print(f'saved {object.name} succesfully into database')
-
-    #read
-    def get_object_by_id(self, object_id: int) -> Optional[Person]:
-        data = self._load_data()
-    
-        record = data.get(str(object_id))
-
-        if not record:
-            return None
+        with self.engine.connect() as conn:
+            result = conn.execute(query, {"id": entity_id})            
+            result = result.fetchone()
+            
+            logger.info(f"Object {result} has been retrieved.")
+            
+            if result:
+                return Person(id=result.id, name=result.name, email=result.email, person_type=result.person_type)
         
-        # Use a copy to avoid mutating the local data dict before return
-        data_copy = record.copy()
-        cls_name = data_copy.pop("cls_type", "Person")
-        cls = self.TYPE_MAP.get(cls_name, Person)
+        return None
 
-        return cls(**data_copy)
-    
-    #read
-    #here to be careful about pagination
-    def list_all(self) -> List[Person]:
-        data = self._load_data()
-        result = []
-
-        for value in data.values():
-            data_copy = value.copy()
-            cls_name = data_copy.pop("cls_type", "Person")
-            cls = self.TYPE_MAP.get(cls_name, Person)            
-            result.append(cls(**data_copy))
-        return result[:5] # pagination TODO 
-    
-    #delete
-    def delete(self, object_id) -> bool:
-        data = self._load_data()
-        object_id = str(object_id)
-
-        if object_id in data:
-            del data[object_id]        
-            self._update_data(data)
-            return True
+    def get_by_email(self, email: str):
+        query = text(f"SELECT * FROM {self.table} WHERE EMAIL =:email")
+        
+        with self.engine.connect() as conn:
+            result = conn.execute(query, {"email": email})            
+            result = result.fetchone()
+            
+            logger.info(f"User with email {result} has been already in the database.")
+            
+            if result:
+                return True
         
         return False
- 
+
+    # update
+    def update(self, entity: Person | Interviewer | Candidate):
+        query = text(f"""
+            UPDATE {self.table}
+            SET NAME = :name, 
+                EMAIL = :email,
+                PERSON_TYPE = :person_type
+            WHERE ID = :id;
+                     """)
+
+        with self.engine.begin() as conn: 
+            
+            conn.execute(query, {"id": entity.id,
+                                           "name": entity.name, 
+                                           "email": entity.email,
+                                           "person_type": entity.person_type})
+
+        logger.info(f"Object {entity.name} in the DB has been updated.")
+
+    # delete 
+    def delete(self, entity_id: str):
+        query = text(f"DELETE FROM {self.table} WHERE ID =:id")
+    
+        with self.engine.begin() as conn:
+            result = conn.execute(query, {"id": entity_id})            
+            
+            if result.rowcount > 0:
+                logger.info(f"Object {entity_id} has been deleted.")
+                return True
+            else:
+                logger.info(f"Object {entity_id} has not been deleted.")
+                return False
+

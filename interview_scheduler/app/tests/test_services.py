@@ -16,11 +16,19 @@ from app.dao.interview_dao import InterviewDao
 from app.dao.timeslot_dao import TimeSlotDao
 
 
-def test_get_slots_per_person_1_week(sample_availability_service, interviewer_johnny):
-    
+def test_get_slots_per_person_1_week_johnny(db_engine, sample_availability_service, sample_johnny_blocked_slots, interviewer_johnny, sample_end_scheduling_timeframe):
+    # Arrange 
+    person_db = PersonDao(engine=db_engine)
+    person_db.save(interviewer_johnny)
+
+    slots_db = TimeSlotDao(engine=db_engine)
+    slots_db.save(sample_johnny_blocked_slots)
+
+    # Act
     retrieved_slots = sample_availability_service.get_slots_per_person(
-        interviewer_johnny,slot_duration=60, timeframe=datetime(2026, 3, 8, 11, 00))
+        interviewer_johnny,slot_duration=60, timeframe=sample_end_scheduling_timeframe)
     
+    #Assert
     assert len(retrieved_slots) == 36
 
 def test_get_slots_per_person_2_weeks(sample_availability_service, interviewer_johnny):
@@ -36,9 +44,24 @@ def test_get_slots_alan(sample_availability_service, candidate_alan):
     
     assert len(retrived_slots) == 77
 
-def test_interview_scheduling_service(sample_availability_service,candidate_alan, interviewer_johnny, sample_interview):
+def test_get_slots_carl(sample_availability_service, interviewer_carl):
+    retrived_slots = sample_availability_service.get_slots_per_person(
+        interviewer_carl,slot_duration=60, timeframe=datetime(2026, 3, 15, 11, 00))
+    
+    assert len(retrived_slots) == 78
+
+def test_interview_scheduling_service_alan_johny(sample_availability_service,candidate_alan, interviewer_johnny, sample_interview_johny_alan):
     scheduler = InterviewScheduler()
     result = scheduler.schedule(sample_availability_service, candidate=candidate_alan, interviewers=[interviewer_johnny], interview_duration=60, timeframe=datetime(2026, 3, 15, 11, 00))
 
-    assert result.id == sample_interview.id
-    assert result.scheduled_slot == sample_interview.scheduled_slot
+    assert result.id == sample_interview_johny_alan.id
+    assert result.timeslot == sample_interview_johny_alan.timeslot
+
+
+
+def test_interview_scheduling_service_alan_carl(sample_availability_service,candidate_alan, interviewer_carl, sample_interview_carl_alan):
+    scheduler = InterviewScheduler()
+    result = scheduler.schedule(sample_availability_service, candidate=candidate_alan, interviewers=[interviewer_carl], interview_duration=60, timeframe=datetime(2026, 3, 15, 11, 00))
+
+    assert result.id == sample_interview_carl_alan.id
+    assert result.timeslot == sample_interview_carl_alan.timeslot

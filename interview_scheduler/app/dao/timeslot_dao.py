@@ -5,8 +5,13 @@ from dataclasses import asdict
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional
-from app.models.person import Person, Candidate, Interviewer
-from app.models.timeslot import TimeSlot, WorkHours, Interview
+from app.models.timeslot import TimeSlot
+from sqlalchemy import text
+from app.models.person import Person
+from app.models.interviewer import Interviewer
+from app.models.candidate import Candidate
+import logging
+from sqlalchemy.exc import IntegrityError
 
 # Design of the DAO layer
 '''
@@ -15,89 +20,102 @@ For save() or update(): Pass the whole object. The DAO needs the data to store i
 
 For get, delete, or find: Pass the ID only. It’s cleaner, less memory-intensive, and prevents "Object vs. Function" errors.
 '''
+logger = logging.getLogger(__name__)
 
 class TimeSlotDao:
-    def __init__(self, storage_file: str = "slots.json"):
-        self._directory = "interview_scheduler/data" #creation of the path
-        self._storage_file = os.path.join(self._directory, storage_file) #combining with the filename
+    def __init__(self, engine):
+        self.engine = engine
+        self.table =  "timeslot"
 
-        # Ensure the directory exists so open() doesn't fail
-        os.makedirs(self._directory, exist_ok=True)
+    # create
+    def save(self, entity: TimeSlot):
+        # add a new user to the database
 
-    def _load_data(self) -> Dict: #this is not ideal, opening up every time 
-        if not os.path.exists(self._storage_file):
-            return {}
+        query = text(f"INSERT INTO {self.table} (ID, START_TIME, END_TIME, OWNER_ID, OWNER_TYPE, STATUS) VALUES (:id, :start_time, :end_time, :owner_id, :owner_type, :status);")
+
+        # engine.begin command commits the record in db, engine.connect will not
+        # engine.begin() → auto-commit on success
         try:
-            with open(self._storage_file, 'r') as f:
-                raw_data = json.load(f)
-                return raw_data
-        except (FileNotFoundError,json.JSONDecodeError):
-            return {}
+            with self.engine.begin() as conn: 
+                
+                conn.execute(query, {"id": entity.id,
+                                            "start_time": entity.start_time, 
+                                            "end_time": entity.end_time,
+                                            "owner_id": entity.owner_id,
+                                            "owner_type": entity.owner_type,
+                                            "status": entity.status})
+
+            logger.info(f"Object {entity.id} has been saved into the DB.")
         
-    def _update_data(self, data: Dict):
-        with open(self._storage_file, 'w') as f:
-            json.dump(data, f, indent=4)
+        except IntegrityError as e:
+            logger.error(f"Object {entity.id} has been already in the DB. Error detail:{e}")
 
-    #create & update
-    def save(self, object: TimeSlot): #store the pesron type
-        data = self._load_data()
-
-        object_dict = asdict(object)
-
-        #convert datetime to isoformat  
-        object_dict = self._serialize(object_dict, object)      
+    # read
+    def get_object_by_id(self, entity_id: str):
+        query = text(f"SELECT * FROM {self.table} WHERE ID =:id")
         
-        #getting ready to update 
-        # take the data file, find or create the object.id from TimeSlot and assign object_dict which has been turned into dict 
-        data[str(object.id)] = object_dict
+        with self.engine.connect() as conn:
+            result = conn.execute(query, {"id": entity_id})            
+            result = result.fetchone()
+            
+            logger.info(f"Object {result} has been retrieved.")
+            
+            if result:
+                return TimeSlot(id=result.id, start_time=result.start_time, end_time=result.end_time, owner_id=result.owner_id, owner_type=result.owner_type, status=result.status)
         
-        self._update_data(data)
-        print(f'saved Timeslot {object.id, object.owner_id} succesfully into database')
+        return None
 
-    #read
-    def get_object_by_id(self, object_id: int) -> Optional[TimeSlot]: #finish the data copy TODO 
-        data = self._load_data()
-
-        record = data.get(str(object_id))
-
-        if not record:
-            return None
+    # update
+    def update(self, entity: TimeSlot):
+        query = text(f"""
+            UPDATE {self.table}
+            SET START_TIME = :start_time,
+                END_TIME = :end_time,
+                OWNER_ID = :owner_id,
+                ONWER_TYPE = :owner_type,
+                STATUS = :status,
+            WHERE ID = :id;
+                     """)
         
-        return TimeSlot(**record)
+        with self.engine.begin() as conn: 
+            
+            conn.execute(query, {"id": entity.id,
+                                           "start_time": entity.start_time, 
+                                           "end_time": entity.end_time,
+                                           "owner_id": entity.owner_id,
+                                           "owner_type": entity.owner_type,
+                                           "status": entity.status})
+
+        logger.info(f"Object {entity.id} in the DB has been updated.")
+
+    # delete 
+    def delete(self, entity_id: str):
+        query = text(f"DELETE FROM {self.table} WHERE ID =:id")
     
-    #read - list all slots  #TODO this logic should be object_id not person_id - that should be hanlded separately, right? 
-    def get_blocked_slots_by_person(self, owner_id: int):  #passing an object
-        data = self._load_data()
-        result = []
+        with self.engine.begin() as conn:
+            result = conn.execute(query, {"id": entity_id})            
+            
+            if result.rowcount > 0:
+                logger.info(f"Object {entity_id} has been deleted.")
+                return True
+            else:
+                logger.info(f"Object {entity_id} has not been deleted.")
+                return False
 
-        for record in data.values():
-            if record.get("owner_id") == int(owner_id):
-                record = self._deserialize(record)
-                result.append(TimeSlot(**record))
-        return result
-    
-    #delete
-    def delete(self, object_id) -> bool:
-        data = self._load_data()
-        object_id = str(object_id)
 
-        if object_id in data:
-            del data[object_id]        
-            self._update_data(data)
-            return True
+    def get_blocked_slots_by_person(self, owner_id: int) -> list[TimeSlot]:
+        query = text(f"SELECT * FROM {self.table} WHERE OWNER_ID =:owner_id AND STATUS ='unavailable'")
+        blocked_slots = []
         
-        return False
-    
-    def _deserialize(self, record):
-        record_copy = record.copy()
-        record_copy['start'] = datetime.fromisoformat(record_copy['start'])
-        record_copy['end'] = datetime.fromisoformat(record_copy['end'])
+        with self.engine.begin() as conn:
+            result = conn.execute(query, {"owner_id": owner_id})            
+            result = result.fetchall()
 
-        return record_copy
-
-    def _serialize(self, record, object):
-        record["start"] = object.start.isoformat()
-        record["end"] = object.end.isoformat()
-
-        return record
-
+            
+            for row in result:
+                slot = TimeSlot(id=row.id, start_time=row.start_time, end_time=row.end_time, owner_id=row.owner_id, owner_type=row.owner_type, status=row.status)
+                blocked_slots.append(slot)
+            
+            logger.info(f"Blocked slots {blocked_slots} has been retrieved.")
+        
+        return blocked_slots

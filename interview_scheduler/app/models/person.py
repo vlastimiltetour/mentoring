@@ -1,27 +1,14 @@
 from typing import List, Optional  
 from dataclasses import dataclass
+from app.models.entity import Entity
 
+# Entity
 @dataclass
-class Person:
-   id: int
+class Person(Entity):
    name: str = None
-   email: str = None
+   email: str = None 
+   person_type: str = None
    #workhours: object = None
 
-
-@dataclass
-class Candidate(Person):
-    def __repr__(self):
-        return f"candidate {self.name}"
-
-
-@dataclass
-class Interviewer(Person):
-    def __repr__(self):
-        return f"interviewer {self.name}"
-
-        
-        
-    
 
 

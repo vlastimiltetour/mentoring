@@ -13,8 +13,7 @@ from app.dao.interview_dao import InterviewDao
 from app.dao.timeslot_dao import TimeSlotDao
 
 class InterviewScheduler:
-    def schedule(self, availability: Availability, candidate: Candidate, interviewers: [Interviewer], interview_duration: int, timeframe):
-        interview_dao = InterviewDao()
+    def schedule(self, availability: Availability, candidate: Candidate, interviewers: Interviewer, interview_duration: int, timeframe, interview_dao=InterviewDao):
         #take candidate and schedule with interviewers 
         #iterate over interviewers
         self.intervew_duration = interview_duration
@@ -27,19 +26,20 @@ class InterviewScheduler:
             matching_slots = [i for i in interviewer_slots if i in candidate_slots]
             
             for slot in matching_slots:
-                all_matching_slots.append((slot, interviewer.name))
+                all_matching_slots.append((slot, interviewer))
         
         if all_matching_slots:
             earliest_slot = self._find_earliest_slot(all_matching_slots)
-            
+        
+            print('candidate', candidate, type(candidate), "interviewer", interviewer, type(interviewer))
             interview_scheduled = Interview(
-                id=1,
+                #id=1, # TODO BUG Automatically generate 
                 candidate=candidate, 
                 interviewer=earliest_slot[1],
-                scheduled_slot=earliest_slot[0]
+                timeslot=earliest_slot[0]
             )
             
-            #interview_dao.save(interview_scheduled) #TODO set the serialization 
+            interview_dao.save(interview_scheduled) 
 
             return interview_scheduled
         
